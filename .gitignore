@@ -1,4 +1,4 @@
 .idea/*
-res/src_csv.tar.xz
+dataset/src_csv.tar.xz
 tools/*
 venv/*
