@@ -8,7 +8,7 @@
 
 ### Neural network structure ###
 
-* **Six input neurons for the folowing parameters:**
+* **Six input neurons for the following parameters:**
 	* open - day open
 	* high - day high
 	* low - day low
