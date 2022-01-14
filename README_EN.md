@@ -4,7 +4,7 @@
 ## Task ##
 ***Create neural network for prediction of the price direction for next day, based on previos day(s)***
 
-### First stady ###
+## First stady ##
 
 ### Neural network structure ###
 
