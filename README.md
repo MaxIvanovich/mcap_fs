@@ -1,7 +1,7 @@
 # mcap_fs #
 ### mcap_fs - Market Charts Analisis and Prediction (first study) ###
 
-- :en: [**English description**](./README_EN.md)
+- :us: [**English description**](./README_EN.md)
 
 - :ru: [**Описание на русском**](./README_RU.md)
 
