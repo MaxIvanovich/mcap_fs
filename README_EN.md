@@ -2,7 +2,7 @@
 **mcap_fs - Market Charts Analisis and Prediction (first study)**
 
 ## Task ##
-***Create neural network for prediction of the price direction for next day, based on previos day(s)***
+***Create neural network for prediction of the price direction for next day, based on previous day(s)***
 
 ## First study ##
 
