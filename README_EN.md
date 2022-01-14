@@ -1,24 +1,24 @@
 # mcap_fs #
 **mcap_fs - Market Charts Analisis and Prediction (first study)**
 
-## Задача ##
-***Составить алгоритм нейронной сети для определения направления движения цены на следующий торговый день, опираясь на предыдущий днень***
+## Task ##
+***Create neural network for prediction of the price direction for next day, based on previos day(s)***
 
-### Эксперимент первый ###
+### First stady ###
 
-### Структура нейронной сети ###
+### Neural network structure ###
 
-* **Шесть входящих нейронов для следующих параметров:**
-	* open - открытие дня
-	* high - максимум дня
-	* low - минимум дня
-	* close - закрытие дна
-	* volume - наторгованый объем за день
-	* direction - рост/снижение
-* **Шесть скрытых нейронов**
-* **Два выходных нейрона:**
-	* нейрон роста, активация которого означает рост
-	* нейрон падения, активация которого означает снижение
+* **Six input neurons for the folowing parameters:**
+	* open - day open
+	* high - day high
+	* low - day low
+	* close - day close
+	* volume - day volume
+	* direction - growth/decline
+* **Six hidden neurons**
+* **Two output neurons:**
+	* Growth neuron, active when growth
+	* decline neuron, active when decline
 
-#### Функция активации ####
-Функция активации для всех нейронов всех уровней - сигмоида.
+#### Activation function ####
+Sigmoid for all neurons
