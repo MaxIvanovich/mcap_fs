@@ -16,9 +16,9 @@
 	* volume - day volume
 	* direction - growth/decline
 * **Six hidden neurons**
-* **Two output neurons:**
-	* Growth neuron, active when growth
-	* decline neuron, active when decline
+* **One output neuron:**
+	* values close to 1 means growth
+	* values close to -1 means decline
 
 #### Activation function ####
-Sigmoid for all neurons
+Hyperbolic tangent for output neuron, sigmoid for all others
