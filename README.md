@@ -1,5 +1,8 @@
 # mcap_fs #
 ### mcap_fs - Market Charts Analisis and Prediction (first study) ###
+<hr>
+<img align="center" src="NN.png" width="657" height="514" alt="Neural network sketch">
+<hr />
 
 - :us: [**English description**](./README_EN.md)
 
