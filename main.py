@@ -1,24 +1,26 @@
 # Импорт необходимых библиотек ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import numpy as np
 import scipy.special as sc
-#import matplotlib.pyplot as mp
+import math as m
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Нейрон смещения, всегда равен 1
+bias = 1.0
 
 # Определение класса нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class NN:
-
     # Функция инициализации нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def __init__(self, inputnodes, hiddennodes, outputnodes, learningrate):
 
-        # Количество узлов на входном, скрытом и выходном слоях ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Количество узлов на входном, скрытом и выходном слоях
         self.inodes = inputnodes
         self.hnodes = hiddennodes
         self.onodes = outputnodes
 
-        # Коэффициент обучения ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Коэффициент обучения
         self.lr = learningrate
 
-        # Матрицы весовых коэффициентов связей ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Матрицы весовых коэффициентов связей
         # при инициализации заполняются случайными числами с нормальным распределением
         #   wih - между входным и скрытым слоями
         #   who - между скрытым и выходным слоями
@@ -30,7 +32,7 @@ class NN:
         # на узел
         #   size - необязательный параметр, определяющий форму вывода функции, в нашем случае это
         # двумерная матрица с размерами (hnodes x inodes)
-        self.wih = np.random.normal(0.0, pow(self.hnodes, -0.5), (self.hnodes, self.inodes))
+        self.wih = np.random.normal(0.0, pow(self.hnodes, -0.5), ((self.hnodes - 1), self.inodes))
         self.who = np.random.normal(0.0, pow(self.onodes, -0.5), (self.onodes, self.hnodes))
 
         # Функции активации:
@@ -46,8 +48,24 @@ class NN:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Функция опроса нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def query():
-        pass
+    def query(self, inputs_list):
+        # Добавление нейрона смещения к массиву входных данных
+        inputs_list = np.append(inputs_list, bias)
+        # Преобразование массива входных значений в двумерный массив
+        inputs = np.array(inputs_list, ndmin = 2).T
+
+        # Расчет входящих сигналов для скрытого слоя
+        hidden_inputs = np.dot(self.wih, inputs)
+        hidden_inputs = np.append(hidden_inputs, bias)
+        # Расчёт исходящих сигналов скрытого слоя
+        hidden_outputs = self.hidden_act_func(hidden_inputs)
+
+        # Расчет входящих сигналов для выходного слоя
+        final_inputs = np.dot(self.who, hidden_outputs)
+        # Расчёт исходящих сигналов выходного слоя
+        final_outputs = self.output_act_func(final_inputs)
+        
+        return final_outputs[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Характеристики экземпляра класса нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,11 +82,11 @@ hidden_nodes = input_nodes
 output_nodes = 1
 
 # коэффициент обучения
-learning_rate = 0.1 
+learning_rate = 0.1
 
 nn = NN(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
-# Подготовка входящих тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Подготовка входящих тренировочных и тестовых данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 dataset_file = "./dataset/RI_extended.csv"
 
 # Открытие файла с данными для чтения
@@ -83,6 +101,103 @@ total_candles = len(all_list)
 # Разделение данных на две группы - тренировочную (~80%) и проверочную (~20%)
 total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
-print(total_trainset, total_testset)
 
-print(all_list)
+# Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+epochs = 1
+for e in range(epochs):
+
+    # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    i = 0
+    while i <= total_trainset:          # Цикл перебора ~80% строк
+        ohlc_dataset = []               # "Open-High-Low-Close" - массив для временного хранения 
+        volume_dataset = []             # "Volume" - массив для временного хранения
+        change_dataset = []             # "Change" - массив для временного хранения изменений цены
+        inputs = []                     # Массив тренировочных данных
+        targets = []                    # Массив "ответов" (целевых значений), здесь один элемент
+        j = i
+        while j <= i + 4:                               # Цикл перебора пяти свечек
+            temp_row = all_list[j].split(";")
+            ohlc_row = temp_row[2:6]
+            k = 0
+            while k <= 3:                               # Цикл перебора "Open-High-Low-Close"
+                ohlc_dataset.append(float(ohlc_row[k]))
+                k += 1
+            volume_dataset.append(float(temp_row[6]))
+            change_dataset.append(float(temp_row[7]))
+            j += 1
+
+        targets = [int(all_list[j].split(";")[8])]  # Целевое значение - "направление" 6-й свечи
+        targets = np.asfarray(targets)              # Преобразование списка в массив numpy
+
+        # "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
+        avg = sum(ohlc_dataset) / len(ohlc_dataset)
+        for n in range(len(ohlc_dataset)):
+            ohlc_dataset[n] = ohlc_dataset[n] - avg
+
+        # "Нормализация" объёмов 5 свечей относительно среднего объема
+        avg = sum(volume_dataset) / len(volume_dataset)
+        for n in range(len(volume_dataset)):
+            volume_dataset[n] = volume_dataset[n] - avg
+    
+        # Итоговый список одного набора данных для тренировки
+        inputs = ohlc_dataset + volume_dataset + change_dataset
+        # Преобразование списка в массив numpy
+        inputs = np.asfarray(inputs)
+
+        # ЗДЕСЬ ВЫЗОВ ТРЕНИРОВОЧНОГО МЕТОДА ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #nn.train(inputs, targets)
+
+        i += 1
+    pass
+
+# Формирование массива тестовых данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+scorecard = []      # Массив оценок работы сети
+i = total_trainset
+while i < total_candles - candles_quantity: # Цикл перебора ~20% последних строк всего набора
+    ohlc_dataset = []                       # "Open-High-Low-Close" - массив для временного хранения 
+    volume_dataset = []                     # "Volume" - массив для временного хранения
+    change_dataset = []                     # "Change" - массив для временного хранения изменений цены
+    inputs = []                             # Массив тренировочных данных
+    correct_direction = []                  # Массив "ответов" (целевых значений), здесь один элемент
+    j = i
+    while j <= i + 4:                       # Цикл перебора пяти свечек
+        temp_row = all_list[j].split(";")
+        ohlc_row = temp_row[2:6]
+        k = 0
+        while k <= 3:                                   # Цикл перебора "Open-High-Low-Close"
+            ohlc_dataset.append(float(ohlc_row[k]))
+            k += 1
+        volume_dataset.append(float(temp_row[6]))
+        change_dataset.append(float(temp_row[7]))
+        j += 1
+
+    correct_direction = int(all_list[j].split(";")[8])  # Целевое значение - "направление" 6-й свечи
+
+    # "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
+    avg = sum(ohlc_dataset) / len(ohlc_dataset)
+    for n in range(len(ohlc_dataset)):
+        ohlc_dataset[n] = ohlc_dataset[n] - avg
+
+    # "Нормализация" объёмов 5 свечей относительно среднего объема
+    avg = sum(volume_dataset) / len(volume_dataset)
+    for n in range(len(volume_dataset)):
+        volume_dataset[n] = volume_dataset[n] - avg
+    
+    # Итоговый список одного набора данных для тренировки
+    inputs = ohlc_dataset + volume_dataset + change_dataset
+    # Преобразование списка в массив numpy
+    inputs = np.asfarray(inputs)
+    
+    # Опрос сети на тестовых данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    outputs = nn.query(inputs)
+
+    # Подсчёт количества правильных ответов
+    if (m.fabs(correct_direction) - m.fabs(outputs)) <= 0.1:
+        scorecard.append(1)
+    else:
+        scorecard.append(0)
+
+    i += 1
+
+# Вычисление точности сети
+print("Точность сети:", 100 * (sum(scorecard) / len(scorecard)))
