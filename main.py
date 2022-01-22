@@ -49,7 +49,6 @@ class NN:
         # Преобразование массива входных и целевых значений в двумерный массив
         inputs = np.array(inputs_list, ndmin = 2).T
         targets = np.array(targets_list, ndmin = 2).T
-        #targets = targets[0]
 
         # Расчет входящих сигналов для скрытого слоя
         hidden_inputs = np.dot(self.wih, inputs)
@@ -74,19 +73,10 @@ class NN:
         # Обновление весов связей между выходным и скрытым слоями
         self.who += self.lr * np.dot((output_errors * (1 - m.pow(final_outputs, 2))), np.transpose(hidden_outputs))
 
+        # Удаление последнего элемента массива (нейрона смещения)
+        hidden_errors = np.delete(hidden_errors, (self.hnodes - 1), axis = 0)
+        hidden_outputs = np.delete(hidden_outputs, (self.hnodes - 1), axis = 0)
         # Обновление весов связей между скрытым и входным слоями
-        #print("Inputs:", inputs.shape)
-        #print("T.Inputs:", np.transpose(inputs).shape)
-        #print("Wih:", self.wih.shape)
-
-        hidden_errors = np.delete(hidden_errors, 30, axis = 0)
-        #print("Hidden Errors:", hidden_errors.shape)
-        hidden_outputs = np.delete(hidden_outputs, 30, axis = 0)
-        #print("Hidden Outputs:", hidden_outputs.shape)
-
-        #tmp = (hidden_errors * hidden_outputs * (1.0 - hidden_outputs))
-        #print("Размерность массива производной:", tmp.shape)
-
         self.wih += self.lr * np.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), np.transpose(inputs))
 
         pass
@@ -116,13 +106,13 @@ class NN:
 
 # Характеристики экземпляра класса нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # количество свечей для одного набора
-candles_quantity = 5
+candles_quantity = 10
 
 # количество входных узлов (параметров) - 6 параметров свечей * 5 свечей + 1 нейрон смещения
 input_nodes = 6 * candles_quantity + 1
 
 # количество скрытых узлов - равно количеству входнх узлов + нейрон смещения
-hidden_nodes = input_nodes + 40
+hidden_nodes = input_nodes #+ 40
 
 # количество выходных узлов
 output_nodes = 1
@@ -149,7 +139,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 1000
+epochs = 10
 for e in range(epochs):
 
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,7 +151,7 @@ for e in range(epochs):
         inputs = []                     # Массив тренировочных данных
         targets = []                    # Массив "ответов" (целевых значений), здесь один элемент
         j = i
-        while j <= i + 4:                               # Цикл перебора пяти свечек
+        while j <= i + (candles_quantity - 1):             # Цикл перебора пяти свечек
             temp_row = all_list[j].split(";")
             ohlc_row = temp_row[2:6]
             k = 0
@@ -206,7 +196,7 @@ while i < total_candles - candles_quantity: # Цикл перебора ~20% п�
     inputs = []                             # Массив тренировочных данных
     correct_direction = []                  # Массив "ответов" (целевых значений), здесь один элемент
     j = i
-    while j <= i + 4:                       # Цикл перебора пяти свечек
+    while j <= i + (candles_quantity - 1):              # Цикл перебора пяти свечек
         temp_row = all_list[j].split(";")
         ohlc_row = temp_row[2:6]
         k = 0
