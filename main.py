@@ -43,7 +43,52 @@ class NN:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Функция тренировки нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def train():
+    def train(self, inputs_list, targets_list):
+        # Добавление нейрона смещения к массиву входных данных
+        inputs_list = np.append(inputs_list, bias)
+        # Преобразование массива входных и целевых значений в двумерный массив
+        inputs = np.array(inputs_list, ndmin = 2).T
+        targets = np.array(targets_list, ndmin = 2).T
+        #targets = targets[0]
+
+        # Расчет входящих сигналов для скрытого слоя
+        hidden_inputs = np.dot(self.wih, inputs)
+        # Добавление нейрона смещения к скрытому слою
+        hidden_inputs = np.append(hidden_inputs, bias)
+        # Преобразование массива входных данных скрытого слоя в двумерный массив
+        hidden_inputs = np.array(hidden_inputs, ndmin = 2).T
+        # Расчёт исходящих сигналов скрытого слоя
+        hidden_outputs = self.hidden_act_func(hidden_inputs)
+
+        # Расчет входящих сигналов для выходного слоя
+        final_inputs = np.dot(self.who, hidden_outputs)
+        # Расчёт исходящих сигналов выходного слоя
+        final_outputs = self.output_act_func(final_inputs)
+
+        # Ошибка - разница между целью и результатом сети
+        output_errors = targets - final_outputs
+
+        # Вычисление ошибок скрытого слоя
+        hidden_errors = np.dot(self.who.T, output_errors)
+
+        # Обновление весов связей между выходным и скрытым слоями
+        self.who += self.lr * np.dot((output_errors * (1 - m.pow(final_outputs, 2))), np.transpose(hidden_outputs))
+
+        # Обновление весов связей между скрытым и входным слоями
+        #print("Inputs:", inputs.shape)
+        #print("T.Inputs:", np.transpose(inputs).shape)
+        #print("Wih:", self.wih.shape)
+
+        hidden_errors = np.delete(hidden_errors, 30, axis = 0)
+        #print("Hidden Errors:", hidden_errors.shape)
+        hidden_outputs = np.delete(hidden_outputs, 30, axis = 0)
+        #print("Hidden Outputs:", hidden_outputs.shape)
+
+        #tmp = (hidden_errors * hidden_outputs * (1.0 - hidden_outputs))
+        #print("Размерность массива производной:", tmp.shape)
+
+        self.wih += self.lr * np.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), np.transpose(inputs))
+
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -56,6 +101,7 @@ class NN:
 
         # Расчет входящих сигналов для скрытого слоя
         hidden_inputs = np.dot(self.wih, inputs)
+        # Добавление нейрона смещения к скрытому слою
         hidden_inputs = np.append(hidden_inputs, bias)
         # Расчёт исходящих сигналов скрытого слоя
         hidden_outputs = self.hidden_act_func(hidden_inputs)
@@ -76,7 +122,7 @@ candles_quantity = 5
 input_nodes = 6 * candles_quantity + 1
 
 # количество скрытых узлов - равно количеству входнх узлов + нейрон смещения
-hidden_nodes = input_nodes
+hidden_nodes = input_nodes + 40
 
 # количество выходных узлов
 output_nodes = 1
@@ -103,7 +149,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 1
+epochs = 1000
 for e in range(epochs):
 
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,7 +172,7 @@ for e in range(epochs):
             change_dataset.append(float(temp_row[7]))
             j += 1
 
-        targets = [int(all_list[j].split(";")[8])]  # Целевое значение - "направление" 6-й свечи
+        targets = int(all_list[j].split(";")[8])  # Целевое значение - "направление" 6-й свечи
         targets = np.asfarray(targets)              # Преобразование списка в массив numpy
 
         # "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
@@ -145,7 +191,7 @@ for e in range(epochs):
         inputs = np.asfarray(inputs)
 
         # ЗДЕСЬ ВЫЗОВ ТРЕНИРОВОЧНОГО МЕТОДА ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #nn.train(inputs, targets)
+        nn.train(inputs, targets)
 
         i += 1
     pass
@@ -192,7 +238,7 @@ while i < total_candles - candles_quantity: # Цикл перебора ~20% п�
     outputs = nn.query(inputs)
 
     # Подсчёт количества правильных ответов
-    if (m.fabs(correct_direction) - m.fabs(outputs)) <= 0.1:
+    if m.fabs((correct_direction) - m.fabs(outputs)) <= 0.05:
         scorecard.append(1)
     else:
         scorecard.append(0)
@@ -201,3 +247,5 @@ while i < total_candles - candles_quantity: # Цикл перебора ~20% п�
 
 # Вычисление точности сети
 print("Точность сети:", 100 * (sum(scorecard) / len(scorecard)))
+
+# Предсказание "на завтра" по последним 5 свечкам ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
