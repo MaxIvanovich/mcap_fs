@@ -71,7 +71,7 @@ class NN:
         hidden_errors = np.dot(self.who.T, output_errors)
 
         # Обновление весов связей между выходным и скрытым слоями
-        self.who += self.lr * np.dot((output_errors * (1 - m.pow(final_outputs, 2))), np.transpose(hidden_outputs))
+        self.who += self.lr * np.dot((output_errors * (1 - pow(final_outputs, 2))), np.transpose(hidden_outputs))
 
         # Удаление последнего элемента массива (нейрона смещения)
         hidden_errors = np.delete(hidden_errors, (self.hnodes - 1), axis = 0)
@@ -106,7 +106,7 @@ class NN:
 
 # Характеристики экземпляра класса нейронной сети ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # количество свечей для одного набора
-candles_quantity = 10
+candles_quantity = 15
 
 # количество входных узлов (параметров) - 6 параметров свечей * 5 свечей + 1 нейрон смещения
 input_nodes = 6 * candles_quantity + 1
@@ -118,7 +118,7 @@ hidden_nodes = input_nodes #+ 40
 output_nodes = 1
 
 # коэффициент обучения
-learning_rate = 1.0
+learning_rate = 0.00001
 
 nn = NN(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
@@ -139,7 +139,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 2
+epochs = 100
 for e in range(epochs):
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     i = 0
@@ -222,18 +222,16 @@ while i < total_candles - candles_quantity: # Цикл перебора ~20% п�
     # Опрос сети на тестовых данных
     outputs = nn.query(inputs)
 
-    print(correct_direction)
-    print(outputs)
-
     # Подсчёт количества правильных ответов
-    if m.fabs((correct_direction) - m.fabs(outputs)) <= 0.9:
+    if correct_direction < 0 and outputs < 0.0:
+        scorecard.append(1)
+    elif correct_direction > 0 and outputs > 0.0:
         scorecard.append(1)
     else:
         scorecard.append(0)
 
     i += 1
 
-print(scorecard)
 # Вычисление точности сети
 print("Точность сети:", 100 * (sum(scorecard) / len(scorecard)))
 
