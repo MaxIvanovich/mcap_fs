@@ -118,7 +118,7 @@ hidden_nodes = input_nodes #+ 40
 output_nodes = 1
 
 # коэффициент обучения
-learning_rate = 0.05
+learning_rate = 1.0
 
 nn = NN(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
@@ -139,7 +139,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 5000
+epochs = 2
 for e in range(epochs):
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     i = 0
@@ -161,25 +161,23 @@ for e in range(epochs):
             change_dataset.append(float(temp_row[7]))
             j += 1
 
-        targets = int(all_list[j].split(";")[8])    # Целевое значение - "направление" 6-й свечи
+        targets = int(all_list[j].split(";")[8])    # Целевое значение - "направление" следующей свечи
         targets = np.asfarray(targets)              # Преобразование списка в массив numpy
 
-        # "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
-        avg = sum(ohlc_dataset) / len(ohlc_dataset)
-        for n in range(len(ohlc_dataset)):
-            ohlc_dataset[n] = ohlc_dataset[n] - avg
-
-        # "Нормализация" объёмов 5 свечей относительно среднего объема
-        avg = sum(volume_dataset) / len(volume_dataset)
-        for n in range(len(volume_dataset)):
-            volume_dataset[n] = volume_dataset[n] - avg
-    
         # Итоговый список одного набора данных для тренировки
         inputs = ohlc_dataset + volume_dataset + change_dataset
-        # Преобразование списка в массив numpy
+        
+        # Подготовка для нормальзиции входных данных: определение диаппазона между макс. и  мин.;
+        # и приведение к диаппазону 0.01...1.0
+        inputs_min = min(inputs)
+        inputs_max = max(inputs)
+        inputs_range = inputs_max + m.fabs(inputs_min)
+        
+        # Преобразование списка в массив numpy и нормализация
         inputs = np.asfarray(inputs)
+        inputs = ((inputs + m.fabs(inputs_min)) / inputs_range) * 0.99 + 0.01
 
-        # ЗДЕСЬ ВЫЗОВ ТРЕНИРОВОЧНОГО МЕТОДА ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ВЫЗОВ ТРЕНИРОВОЧНОГО МЕТОДА
         nn.train(inputs, targets)
 
         i += 1
@@ -208,32 +206,34 @@ while i < total_candles - candles_quantity: # Цикл перебора ~20% п�
 
     correct_direction = int(all_list[j].split(";")[8])  # Целевое значение - "направление" 6-й свечи
 
-    # "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
-    avg = sum(ohlc_dataset) / len(ohlc_dataset)
-    for n in range(len(ohlc_dataset)):
-        ohlc_dataset[n] = ohlc_dataset[n] - avg
-
-    # "Нормализация" объёмов 5 свечей относительно среднего объема
-    avg = sum(volume_dataset) / len(volume_dataset)
-    for n in range(len(volume_dataset)):
-        volume_dataset[n] = volume_dataset[n] - avg
-    
     # Итоговый список одного набора данных для тренировки
     inputs = ohlc_dataset + volume_dataset + change_dataset
-    # Преобразование списка в массив numpy
+
+    # Подготовка для нормальзиции входных данных: определение диаппазона между макс. и  мин.;
+    # и приведение к диаппазону 0.01...1.0
+    inputs_min = min(inputs)
+    inputs_max = max(inputs)
+    inputs_range = inputs_max + m.fabs(inputs_min)
+        
+    # Преобразование списка в массив numpy и нормализация
     inputs = np.asfarray(inputs)
+    inputs = ((inputs + m.fabs(inputs_min)) / inputs_range) * 0.99 + 0.01
     
     # Опрос сети на тестовых данных
     outputs = nn.query(inputs)
 
+    print(correct_direction)
+    print(outputs)
+
     # Подсчёт количества правильных ответов
-    if m.fabs((correct_direction) - m.fabs(outputs)) <= 0.05:
+    if m.fabs((correct_direction) - m.fabs(outputs)) <= 0.9:
         scorecard.append(1)
     else:
         scorecard.append(0)
 
     i += 1
 
+print(scorecard)
 # Вычисление точности сети
 print("Точность сети:", 100 * (sum(scorecard) / len(scorecard)))
 
@@ -255,21 +255,21 @@ while j <= i + (candles_quantity - 1):              # Цикл перебора 
     change_dataset.append(float(temp_row[7]))
     j += 1
 
+# Дата последней записи в файле данных
 last_date = all_list[j - 1].split(";")[0]
-# "Нормализация" всех "Open-High-Low-Close" для 5 свечей относительно средней величины
-avg = sum(ohlc_dataset) / len(ohlc_dataset)
-for n in range(len(ohlc_dataset)):
-    ohlc_dataset[n] = ohlc_dataset[n] - avg
 
-# "Нормализация" объёмов 5 свечей относительно среднего объема
-avg = sum(volume_dataset) / len(volume_dataset)
-for n in range(len(volume_dataset)):
-    volume_dataset[n] = volume_dataset[n] - avg
-    
 # Итоговый список одного набора данных для тренировки
 inputs = ohlc_dataset + volume_dataset + change_dataset
-# Преобразование списка в массив numpy
+
+# Подготовка для нормальзиции входных данных: определение диаппазона между макс. и  мин.;
+# и приведение к диаппазону 0.01...1.0
+inputs_min = min(inputs)
+inputs_max = max(inputs)
+inputs_range = inputs_max + m.fabs(inputs_min)
+       
+# Преобразование списка в массив numpy и нормализация
 inputs = np.asfarray(inputs)
+inputs = ((inputs + m.fabs(inputs_min)) / inputs_range) * 0.99 + 0.01
     
 # Опрос сети на тестовых данных
 outputs = nn.query(inputs)
