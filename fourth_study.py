@@ -37,8 +37,9 @@ class NN:
         self.who = np.random.normal(0.0, pow(self.onodes, -0.5), (self.onodes, self.hnodes))
 
         # Функции активации:
-        self.hidden_act_func = lambda x: sc.expit(x)    # сигмоида для скрытого слоя
-        self.output_act_func = lambda x: np.tanh(x)     # гиперболический тангенс для выходного слоя
+        self.hidden_act_func = lambda x: x * (x > 0)        # ReLu для скрытого слоя
+        self.hidden_act_func_d = lambda x: 1.0 * (x > 0)    # Производная ReLu
+        self.output_act_func = lambda x: np.tanh(x)         # Гиперболический тангенс для выходного слоя
         
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,12 +77,13 @@ class NN:
 
         # Обновление весов связей между выходным и скрытым слоями
         self.who += self.lr * np.dot((output_errors * (1 - pow(final_outputs, 2))), np.transpose(hidden_outputs))
-
+    
+        print(hidden_inputs.shape)
         # Удаление последнего элемента массива (нейрона смещения)
-        hidden_errors = np.delete(hidden_errors, (self.hnodes - 1), axis = 0)
-        hidden_outputs = np.delete(hidden_outputs, (self.hnodes - 1), axis = 0)
+        #hidden_errors = np.delete(hidden_errors, (self.hnodes - 1), axis = 0)
+        #hidden_outputs = np.delete(hidden_outputs, (self.hnodes - 1), axis = 0)
         # Обновление весов связей между скрытым и входным слоями
-        self.wih += self.lr * np.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), np.transpose(inputs))
+        self.wih += self.lr * np.dot((hidden_errors * self.hidden_act_func_d(hidden_inputs)), np.transpose(inputs))
 
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,7 +145,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 10000
+epochs = 10
 for e in range(epochs):
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     i = 0
