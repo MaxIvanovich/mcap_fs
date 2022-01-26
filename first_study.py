@@ -116,13 +116,13 @@ candles_quantity = 15
 input_nodes = 6 * candles_quantity + 1
 
 # количество скрытых узлов - равно количеству входнх узлов + нейрон смещения
-hidden_nodes = input_nodes #+ 40
+hidden_nodes = input_nodes + 100
 
 # количество выходных узлов
 output_nodes = 1
 
 # коэффициент обучения
-learning_rate = 0.00001
+learning_rate = 0.01
 
 nn = NN(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
@@ -143,7 +143,7 @@ total_trainset = int(total_candles * 0.8)
 total_testset = total_candles - total_trainset
 
 # Тренировка сети заданное количество раз (эпох) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-epochs = 10000
+epochs = 500
 for e in range(epochs):
     # Формирование массива тренировочных данных ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     i = 0
